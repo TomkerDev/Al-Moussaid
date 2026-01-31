@@ -3,6 +3,7 @@ from supabase import create_client
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 from datetime import datetime
+import pandas as pd
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="Al-Moussaid", page_icon="🇰🇮", layout="centered")
@@ -63,6 +64,36 @@ if st.sidebar.button("M'avertir des nouveaux jobs"):
         st.sidebar.success("Super ! Tu recevras un mail dès qu'un job à +90% de match est publié.")
     else:
         st.sidebar.warning("Fais d'abord une recherche pour que l'IA connaisse ton profil !")
+
+
+# --- SECTION STATISTIQUES ---
+st.sidebar.markdown("---")
+if st.sidebar.checkbox("📊 Voir les tendances du marché"):
+    st.markdown("## 📈 Statistiques du recrutement au Tchad")
+    
+    # 1. Récupération des données
+    stats_res = supabase.table("jobs").select("location").execute()
+    df = pd.DataFrame(stats_res.data)
+    
+    if not df.empty:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Top des villes qui recrutent :**")
+            # Graphique simple des villes
+            st.bar_chart(df['location'].value_counts())
+        
+        with col2:
+            st.write("**Volume total d'offres :**")
+            st.metric("Offres actives", len(df))
+            
+        # 2. Analyse des mots-clés (Compétences demandées)
+        st.write("**Compétences les plus recherchées :**")
+        # On simule ici, mais on pourrait extraire les mots du titre
+        titres = " ".join(supabase.table("jobs").select("title").execute().data[0].values())
+        # (Optionnel : ajouter un nuage de mots ici)
+    else:
+        st.info("Pas assez de données pour les statistiques.")
 
 # --- INTERFACE PRINCIPALE ---
 st.title("🇰🇮 Al-Moussaid")
