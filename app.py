@@ -42,6 +42,28 @@ st.sidebar.header("📍 Localisation")
 villes_disponibles = ["Toutes", "N'Djamena", "Moundou", "Abéché", "Sarh", "Koumra", "Pala"]
 ville_choisie = st.sidebar.selectbox("Filtrer par ville :", villes_disponibles)
 
+# --- SECTION ALERTES DANS LA SIDEBAR ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("📩 Alerte Emploi")
+email_user = st.sidebar.text_input("Ton email pour les alertes :", placeholder="exemple@email.com")
+
+if st.sidebar.button("M'avertir des nouveaux jobs"):
+    if email_user and st.session_state.competences_detectees:
+        # Vectorisation du profil de l'utilisateur
+        vecteur_user = model_embed.encode(st.session_state.competences_detectees).tolist()
+        
+        # Enregistrement dans la table des alertes
+        supabase.table("alertes_emails").insert({
+            "email": email_user,
+            "competences_detectees": st.session_state.competences_detectees,
+            "embedding": vecteur_user,
+            "seuil_match": 0.9
+        }).execute()
+        
+        st.sidebar.success("Super ! Tu recevras un mail dès qu'un job à +90% de match est publié.")
+    else:
+        st.sidebar.warning("Fais d'abord une recherche pour que l'IA connaisse ton profil !")
+
 # --- INTERFACE PRINCIPALE ---
 st.title("🇰🇮 Al-Moussaid")
 st.markdown("### Trouvez un emploi au Tchad grâce à l'IA")
