@@ -4,6 +4,7 @@ import time
 from supabase import create_client
 from groq import Groq
 from sentence_transformers import SentenceTransformer
+import resend
 import os
 
 # --- INITIALISATION ---
@@ -70,5 +71,32 @@ def scraper_tchad_offres():
     except Exception as e:
         print(f"❌ Erreur lors du scraping : {e}")
 
+resend.api_key = os.environ.get('RESEND_API_KEY')
+
+def verifier_et_envoyer_alertes(nouveau_job_id, vecteur_job, titre_job, entreprise):
+    # 1. Chercher les étudiants dont le profil matche à +90%
+    # On utilise une fonction RPC similaire à match_jobs mais pour les alertes
+    alertes = supabase.rpc("match_alertes", {
+        "query_embedding": vecteur_job,
+        "match_threshold": 0.90
+    }).execute()
+
+    for utilisateur in alertes.data:
+        try:
+            resend.Emails.send({
+                "from": "Al-Moussaid <onboarding@resend.dev>",
+                "to": utilisateur['email'],
+                "subject": f"🎯 Nouveau job trouvé : {titre_job}",
+                "html": f"""
+                <h3>Bonjour !</h3>
+                <p>Une nouvelle offre correspondant à 90% à votre profil vient d'être publiée.</p>
+                <p><strong>Poste :</strong> {titre_job}</p>
+                <p><strong>Entreprise :</strong> {entreprise}</p>
+                <p><a href="https://al-moussaid.streamlit.app">Connectez-vous sur Al-Moussaid</a> pour générer votre lettre de motivation.</p>
+                """
+            })
+            print(f"📧 Alerte envoyée à {utilisateur['email']}")
+        except Exception as e:
+            print(f"❌ Erreur envoi email : {e}")
 if __name__ == "__main__":
     scraper_tchad_offres()
