@@ -97,6 +97,16 @@ if mode_saisie == "📤 Importer un fichier":
 else:
     cv_texte_final = st.text_area("Collez votre profil ici :", height=150)
 
+# --- SECTION FEEDBACK DANS LA SIDEBAR ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("📣 Votre avis compte")
+st.sidebar.write("Aidez-nous à améliorer Al-Moussaid !")
+
+# Remplace "https://forms.gle/https://docs.google.com/forms/d/e/1FAIpQLSe8MqO5j9zmAFi3EZOaLZC_TDdYJd0q8UzICb4oK2EvWtX2uA/viewform?usp=dialog" 
+st.sidebar.link_button("⭐ Donner mon avis", "https://docs.google.com/forms/d/e/1FAIpQLSe8MqO5j9zmAFi3EZOaLZC_TDdYJd0q8UzICb4oK2EvWtX2uA/viewform?usp=dialog")
+
+st.sidebar.markdown("---")
+st.sidebar.caption("Projet Al-Moussaid v1.2")
 # --- 6. BOUTON DE RECHERCHE ---
 if st.button("🔍 Rechercher mon match"):
     if cv_texte_final:
