@@ -136,4 +136,14 @@ if st.session_state.resultats:
     else:
         st.warning("Aucune offre pour cette ville.")
 
+with st.expander("ℹ️ Comment fonctionne Al-Moussaid ?"):
+    st.markdown("""
+    **Al-Moussaid** (L'Assistant) est la première plateforme de recrutement au Tchad propulsée par l'Intelligence Artificielle.
+    
+    1. **Analyse Intelligente** : Grâce aux modèles de langage (LLM), nous extrayons vos compétences réelles de votre CV, même s'il est au format PDF.
+    2. **Matching Sémantique** : Au lieu de chercher des mots-clés exacts, notre IA comprend le sens de votre profil. Si vous êtes "Expert en Réseaux", elle vous proposera des postes de "Technicien Cisco" ou "Administrateur Système".
+    3. **Aide à la Postulation** : L'IA rédige pour vous une ébauche de lettre de motivation personnalisée pour chaque offre trouvée, adaptée au contexte tchadien.
+    
+    *L'objectif est de réduire le chômage en connectant plus rapidement les talents aux opportunités locales.*
+    """)
 st.caption("Al-Moussaid v1.2 - N'Djamena, Tchad")
