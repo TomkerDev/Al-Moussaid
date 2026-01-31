@@ -60,25 +60,34 @@ if st.button("🔍 Rechercher mon match"):
             }).execute()
             
             # 4. Affichage des résultats
-            if res.data:
-                st.balloons()
-                st.success(f"Nous avons trouvé {len(res.data)} offres pour vous !")
-                for job in res.data:
-                    with st.container():
-                        col1, col2 = st.columns([3, 1])
-                        with col1:
-                            st.subheader(f"🎯 {job['title']}")
-                            st.caption(f"🏢 {job['company']} | 📍 {job['location']}")
-                        with col2:
-                            score = int(job['similarity'] * 100)
-                            st.metric("Match", f"{score}%")
-                        
-                        st.write(job['description'][:300] + "...")
-                        st.divider()
-            else:
-                st.warning("Aucune offre ne correspond exactement pour le moment. Votre profil a été noté !")
-    else:
-        st.error("Veuillez entrer du texte pour lancer la recherche.")
+            # --- AJOUT DANS LA BOUCLE DES RÉSULTATS ---
+if res.data:
+    st.balloons()
+    st.success(f"Nous avons trouvé {len(res.data)} offres pour vous !")
+    
+    for job in res.data:
+        with st.expander(f"🎯 {job['title']} - {job['company']} (Match: {int(job['similarity']*100)}%)"):
+            st.write(f"**Lieu :** {job['location']}")
+            st.write(f"**Description :** {job['description']}")
+            
+            # Nouveau bouton pour la lettre de motivation
+            if st.button(f"📄 Générer ma lettre pour {job['title']}", key=job['id']):
+                with st.spinner('Rédaction de votre lettre personnalisée...'):
+                    prompt_lettre = f"""
+                    Rédige une lettre de motivation professionnelle et convaincante pour un étudiant tchadien.
+                    Poste : {job['title']} chez {job['company']}.
+                    Compétences du candidat : {competences}
+                    Contexte : Le ton doit être respectueux et adapté au marché du travail au Tchad.
+                    """
+                    
+                    lettre = client_groq.chat.completions.create(
+                        model="llama-3.1-8b-instant",
+                        messages=[{"role": "user", "content": prompt_lettre}]
+                    )
+                    
+                    st.text_area("Votre lettre de motivation :", value=lettre.choices[0].message.content, height=300)
+                    st.download_button("📥 Télécharger la lettre", lettre.choices[0].message.content, file_name=f"Lettre_{job['title']}.txt")
+            st.divider()
 
 # --- FOOTER ---
 st.markdown("---")
