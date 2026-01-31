@@ -1,4 +1,5 @@
 import streamlit as st
+from PyPDF2 import PdfReader
 from supabase import create_client
 from groq import Groq
 from sentence_transformers import SentenceTransformer
@@ -31,6 +32,47 @@ def extraire_competences(cv_text):
     )
     return completion.choices[0].message.content
 
+# --- FONCTION D'EXTRACTION DE TEXTE ---
+def extraire_texte_fichier(uploaded_file):
+    texte = ""
+    if uploaded_file.type == "application/pdf":
+        reader = PdfReader(uploaded_file)
+        for page in reader.pages:
+            texte += page.extract_text()
+    elif uploaded_file.type in ["image/jpeg", "image/png"]:
+        # Note: Pour les images, l'extraction nécessite un OCR plus complexe.
+        # Pour commencer simple, on peut limiter aux PDF ou utiliser une consigne :
+        st.warning("L'analyse directe d'images (JPG/PNG) arrive bientôt. Utilisez le PDF pour l'instant.")
+    return texte
+
+# --- INTERFACE PRINCIPALE ---
+st.title("🇰🇮 Al-Moussaid")
+
+# Option de saisie : Fichier ou Texte
+mode_saisie = st.radio("Comment voulez-vous soumettre votre CV ?", ("📤 Importer un fichier", "⌨️ Copier-coller le texte"))
+
+cv_texte_final = ""
+
+if mode_saisie == "📤 Importer un fichier":
+    uploaded_file = st.file_uploader("Choisissez votre CV (PDF, JPG, PNG)", type=["pdf", "jpg", "png"])
+    if uploaded_file is not None:
+        # Limite de taille (ex: 2Mo)
+        if uploaded_file.size > 2 * 1024 * 1024:
+            st.error("Le fichier est trop lourd. Limite : 2 Mo.")
+        else:
+            with st.spinner("Lecture du fichier..."):
+                cv_texte_final = extraire_texte_fichier(uploaded_file)
+                if cv_texte_final:
+                    st.success("CV chargé avec succès !")
+                    with st.expander("Aperçu du texte extrait"):
+                        st.write(cv_texte_final[:500] + "...")
+else:
+    cv_texte_final = st.text_area("Collez votre profil ici :", height=150)
+
+# --- BOUTON DE RECHERCHE ---
+if st.button("🔍 Rechercher mon match"):
+    if cv_texte_final:
+        # On utilise cv_texte_final pour la suite de ton code (IA + Supabase)
 # --- GESTION DE LA SESSION ---
 if 'resultats' not in st.session_state:
     st.session_state.resultats = None
