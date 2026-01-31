@@ -1,0 +1,5 @@
+supabase
+sentence-transformers
+groq
+requests
+beautifulsoup4
