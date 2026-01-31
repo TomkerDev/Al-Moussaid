@@ -42,7 +42,7 @@ st.info("Collez votre CV ou décrivez vos compétences ci-dessous pour trouver l
 
 # Zone de saisie
 cv_input = st.text_area("Votre profil (CV ou résumé) :", height=200, placeholder="Ex: Informaticien spécialisé en maintenance et réseaux Cisco...")
-
+res = None 
 if st.button("🔍 Rechercher mon match"):
     if cv_input:
         with st.spinner('Analyse de votre profil et recherche en cours...'):
@@ -60,7 +60,7 @@ if st.button("🔍 Rechercher mon match"):
             }).execute()
             
             # 4. Affichage des résultats
-            # --- AJOUT DANS LA BOUCLE DES RÉSULTATS ---
+        
 if res.data:
     st.balloons()
     st.success(f"Nous avons trouvé {len(res.data)} offres pour vous !")
