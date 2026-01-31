@@ -4,3 +4,6 @@ sentence-transformers
 groq
 requests
 beautifulsoup4
+PyPDF2
+pdf2image
+opencv-python
