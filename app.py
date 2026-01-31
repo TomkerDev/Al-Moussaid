@@ -2,6 +2,8 @@ import streamlit as st
 from supabase import create_client
 from groq import Groq
 from sentence_transformers import SentenceTransformer
+import streamlit as st
+url = st.secrets["SUPABASE_URL"]
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="Al-Moussaid", page_icon="🇰🇮", layout="centered")
