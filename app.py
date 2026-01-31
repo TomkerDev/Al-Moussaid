@@ -2,13 +2,11 @@ import streamlit as st
 from supabase import create_client
 from groq import Groq
 from sentence_transformers import SentenceTransformer
-import streamlit as st
-url = st.secrets["SUPABASE_URL"]
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="Al-Moussaid", page_icon="🇰🇮", layout="centered")
 
-# --- INITIALISATION DES CLIENTS (Via Streamlit Secrets) ---
+# --- INITIALISATION DES CLIENTS ---
 @st.cache_resource
 def init_connection():
     url = st.secrets["SUPABASE_URL"]
@@ -17,9 +15,7 @@ def init_connection():
 
 @st.cache_resource
 def load_models():
-    # Modèle d'embedding (Open-source)
     model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-    # Client Groq
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
     return model, client
 
@@ -35,49 +31,55 @@ def extraire_competences(cv_text):
     )
     return completion.choices[0].message.content
 
+# --- GESTION DE L'ÉTAT (SESSION STATE) ---
+if 'resultats' not in st.session_state:
+    st.session_state.resultats = None
+if 'competences_detectees' not in st.session_state:
+    st.session_state.competences_detectees = ""
+
 # --- INTERFACE UTILISATEUR ---
 st.title("🇰🇮 Al-Moussaid")
 st.markdown("### L'Assistant intelligent pour l'emploi au Tchad")
-st.info("Collez votre CV ou décrivez vos compétences ci-dessous pour trouver les meilleures offres.")
 
-# Zone de saisie
-cv_input = st.text_area("Votre profil (CV ou résumé) :", height=200, placeholder="Ex: Informaticien spécialisé en maintenance et réseaux Cisco...")
-res = None 
+cv_input = st.text_area("Votre profil (CV ou résumé) :", height=150, placeholder="Ex: Informaticien spécialisé en maintenance...")
+
 if st.button("🔍 Rechercher mon match"):
     if cv_input:
-        with st.spinner('Analyse de votre profil et recherche en cours...'):
-            # 1. Extraction des compétences
-            competences = extraire_competences(cv_input)
+        with st.spinner('Analyse et recherche en cours...'):
+            # Sauvegarde des compétences pour la lettre plus tard
+            st.session_state.competences_detectees = extraire_competences(cv_input)
             
-            # 2. Vectorisation (384 dimensions)
-            vecteur = model_embed.encode(competences).tolist()
+            # Vectorisation
+            vecteur = model_embed.encode(st.session_state.competences_detectees).tolist()
             
-            # 3. Recherche dans Supabase
+            # Recherche
             res = supabase.rpc("match_jobs", {
                 "query_embedding": vecteur,
                 "match_threshold": 0.35,
                 "match_count": 5
             }).execute()
             
-            # 4. Affichage des résultats
-        
-if res.data:
-    st.balloons()
-    st.success(f"Nous avons trouvé {len(res.data)} offres pour vous !")
+            # Stockage des résultats dans la session
+            st.session_state.resultats = res.data
+    else:
+        st.error("Veuillez entrer votre profil.")
+
+# --- AFFICHAGE DES RÉSULTATS ---
+if st.session_state.resultats:
+    st.success(f"Nous avons trouvé {len(st.session_state.resultats)} offres !")
     
-    for job in res.data:
+    for job in st.session_state.resultats:
         with st.expander(f"🎯 {job['title']} - {job['company']} (Match: {int(job['similarity']*100)}%)"):
             st.write(f"**Lieu :** {job['location']}")
             st.write(f"**Description :** {job['description']}")
             
-            # Nouveau bouton pour la lettre de motivation
-            if st.button(f"📄 Générer ma lettre pour {job['title']}", key=job['id']):
-                with st.spinner('Rédaction de votre lettre personnalisée...'):
+            # Bouton de génération
+            if st.button(f"📄 Générer ma lettre pour {job['title']}", key=f"btn_{job['id']}"):
+                with st.spinner('Rédaction...'):
                     prompt_lettre = f"""
-                    Rédige une lettre de motivation professionnelle et convaincante pour un étudiant tchadien.
-                    Poste : {job['title']} chez {job['company']}.
-                    Compétences du candidat : {competences}
-                    Contexte : Le ton doit être respectueux et adapté au marché du travail au Tchad.
+                    Rédige une lettre de motivation courte pour le poste de {job['title']} chez {job['company']}.
+                    Compétences du candidat : {st.session_state.competences_detectees}
+                    Ton : Professionnel, respectueux, adapté au Tchad.
                     """
                     
                     lettre = client_groq.chat.completions.create(
@@ -85,10 +87,8 @@ if res.data:
                         messages=[{"role": "user", "content": prompt_lettre}]
                     )
                     
-                    st.text_area("Votre lettre de motivation :", value=lettre.choices[0].message.content, height=300)
-                    st.download_button("📥 Télécharger la lettre", lettre.choices[0].message.content, file_name=f"Lettre_{job['title']}.txt")
+                    st.text_area("Lettre générée :", value=lettre.choices[0].message.content, height=200, key=f"txt_{job['id']}")
             st.divider()
 
-# --- FOOTER ---
 st.markdown("---")
-st.caption("Projet Al-Moussaid - Propulsé par l'IA Open-source et Supabase.")
+st.caption("Projet Al-Moussaid - Propulsé par l'IA au Tchad.")
